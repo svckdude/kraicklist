@@ -6,32 +6,83 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KraickList - Find Your Needs Here</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="./css/style.css">
 </head>
 
 <body>
-    <div>
-        <form id="form" autocomplete="off">
-            <input type="text" id="query" name="query">
-            <button type="submit">Search</button>
-        </form>
+    <div class="container">
+        <div class="row header">
+            <div class="col-lg-8 col-sm-12 logo">
+                <a href="/"><h2><i class="fa fa-bullhorn"></i> KraickList</h2></a>
+            </div>
+            <div class="col-lg-4 col-sm-6 search">
+                <form id="form" autocomplete="off">
+                    <div class="input-group mb-3">
+                        <input type="hidden" id="page" name="page" value="1">
+                        <input type="text" id="query" class="form-control" name="query" placeholder="Search">
+                        <div class="input-group-append">
+                            <button id="btnSearch" type="submit" class="btn btn-primary">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <nav aria-label="Page navigation example">
+                    <ul id="pagination" class="pagination justify-content-center">
+                        <li class="page-item"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        <div class="row" id="resultList"></div>
+        <div class="row">
+            <div class="col-sm-12">
+                <nav aria-label="Page navigation example">
+                    <ul id="pagination" class="pagination justify-content-center">
+                        <li class="page-item"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
     </div>
-    <div>
-        <ul id="resultList"></ul>
-    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <!-- <script src="./js/pagination.min.js"></script> -->
+
     <script>
         const Controller = {
             search: (ev) => {
-                ev.preventDefault();
+                ev ? ev.preventDefault() : '';
                 const data = Object.fromEntries(new FormData(form));
-                const response = fetch(`/search?q=${data.query}`).then((response) => {
-                    response.json().then((results) => {
-                        if (!results) {
+                const page = ev ? 1 : data.page;
+                const response = fetch(`/search?q=${data.query}&p=${page}`).then((response) => {
+                    response.json().then((result) => {
+                        if (!result["Records"]) {
                             alert(`No result for ${data.query}`);
                             return
                         }
-                        Controller.updateList(results);
+                        Controller.updateList(result["Records"]);
+                        Controller.createNav(result["Page"], result["TotalPages"] + 1);
                     });
                 });
+
+                // if (data.query) {
+                //     let resultList = document.getElementById("resultList").innerHTML;
+                //     let regexp = new RegExp(`${data.query}`, "g");
+                //     let highlighted  = resultList.replace(regexp, "<span class='highlight'>$&</span>");
+                //     document.getElementById("resultList").innerHTML = highlighted;
+                // }
             },
 
             updateList: (results) => {
@@ -39,21 +90,89 @@
                 for (let result of results) {
                     rows.push(
                         `
-                            <li>
-                                <div>
-                                    <p>${result.title}</p>
-                                    <p>${result.content}</p>
+                        <div class="col-lg-6 col-sm-12">
+                            <div class="card mb-3" style="max-height: 540px;">
+                                <div class="row no-gutters">
+                                    <div class="col-sm-4">
+                                        <a href="#">
+                                            <img src="${result.thumb_url}" class="card-img">
+                                        </a>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <div class="card-body">
+                                            <a href="#"><h5 class="card-title">${result.title}</h5></a>
+                                            <p class="card-text"><small class="text-muted">Tags: ${result.tags}</small></p>
+                                            <p class="card-text"><small class="text-muted">Last updated ${new Date(result.updated_at).toLocaleDateString('en')}</small></p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </li>
+                            </div>
+                        </div>
                         `
                     );
                 }
                 resultList.innerHTML = rows.join(" ");
             },
+
+            createNav: (activePage, pageCount) => {
+                let start = activePage - 5,
+                      end = activePage + 5;
+                
+                if (end > pageCount) {
+                    start -= (end - pageCount);
+                    end = pageCount;
+                }
+                if (start <= 0) {
+                    end += ((start - 1) * (-1));
+                    start = 1;
+                }
+                end = end > pageCount ? pageCount : end;
+
+                const links = [];
+                for (let i = start; i < end; i++) {
+                    links.push(`<li class="page-item ${i == activePage ? 'active' : ''}"><a class="page-link" href="#" onclick="setQueryPage(${i});return false;">${i}</a></li>`);
+                }
+
+                const paginations = document.getElementsByClassName("pagination");
+                for (let i = 0; i < paginations.length; i++) {
+                    const pagination = paginations[i];
+                    pagination.innerHTML = links.join(" ");
+
+                    const firstPageBtn = document.createElement("li");
+                    firstPageBtn.className = "page-item";
+                    firstPageBtn.innerHTML = `
+                        <a class="page-link" href="#" aria-label="First" onclick="setQueryPage(${1});return false;">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    `;
+                    const lastPageBtn = document.createElement("li");
+                    lastPageBtn.className = "page-item";
+                    lastPageBtn.innerHTML = `
+                        <a class="page-link" href="#" aria-label="Last" onclick="setQueryPage(${pageCount - 1});return false;">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    `;
+
+                    pagination.prepend(firstPageBtn);
+                    pagination.append(lastPageBtn);
+                }
+            }
+        
         };
 
         const form = document.getElementById("form");
         form.addEventListener("submit", Controller.search);
+
+        search = () => {
+            Controller.search();
+        }
+
+        setQueryPage = (page) => {
+            document.getElementById("page").value = page;
+            Controller.search();
+        }
+
+        Controller.search();
     </script>
 </body>
 

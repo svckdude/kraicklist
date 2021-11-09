@@ -1,0 +1,27 @@
+.container {
+    margin: 50px auto;
+}
+.header {
+    margin-bottom: 75px
+}
+.logo a {
+    text-decoration: none;
+    color: #000;
+}
+.highlight {
+    background-color: yellow;
+}
+.card-img {
+    width: 100%;
+    height: 15vw;
+    object-fit: cover;
+}
+
+@media (max-width: 992px) {
+    .logo {
+        text-align: center;
+    }
+    .search {
+        margin: 0px auto;
+    }
+}

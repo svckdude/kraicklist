@@ -7,9 +7,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	// "github.com/vcraescu/go-paginator"
+	// "github.com/vcraescu/go-paginator/adapter"
 )
 
 func main() {
@@ -41,13 +45,26 @@ func handleSearch(s *Searcher) http.HandlerFunc {
 		func(w http.ResponseWriter, r *http.Request) {
 			// fetch query string from query params
 			q := r.URL.Query().Get("q")
-			if len(q) == 0 {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("missing search query in query params"))
-				return
-			}
+			p, err := strconv.Atoi(r.URL.Query().Get("p"))
+			// if len(q) == 0 {
+			// 	w.WriteHeader(http.StatusBadRequest)
+			// 	w.Write([]byte("missing search query in query params"))
+			// 	return
+			// }
+
 			// search relevant records
 			records, err := s.Search(q)
+
+			// page records
+			start, end := paginate(p, 20, len(records))
+			pagedSlice := records[start:end]
+
+			totalPages := float64(len(records)) / float64(20)
+			var response PaginateRecord
+			response.Records = pagedSlice
+			response.Page = p
+			response.TotalPages = int(math.Ceil(totalPages))
+
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
@@ -56,7 +73,7 @@ func handleSearch(s *Searcher) http.HandlerFunc {
 			// output success response
 			buf := new(bytes.Buffer)
 			encoder := json.NewEncoder(buf)
-			encoder.Encode(records)
+			encoder.Encode(response)
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(buf.Bytes())
 		},
@@ -97,12 +114,48 @@ func (s *Searcher) Load(filepath string) error {
 
 func (s *Searcher) Search(query string) ([]Record, error) {
 	var result []Record
+	query = strings.ToLower(query)
+
 	for _, record := range s.records {
-		if strings.Contains(record.Title, query) || strings.Contains(record.Content, query) {
+		title := strings.ToLower(record.Title)
+		content := strings.ToLower(record.Content)
+
+		if strings.Contains(title, query) || strings.Contains(content, query) {
 			result = append(result, record)
 		}
 	}
 	return result, nil
+}
+
+func paginate(pageNum int, pageSize int, sliceLength int) (int, int) {
+	start := (pageNum - 1) * pageSize
+
+	if start > sliceLength {
+		start = sliceLength
+	}
+
+	end := start + pageSize
+	if end > sliceLength {
+		end = sliceLength
+	}
+
+	return start, end
+	// if skip > len(x) {
+	// 	skip = len(x)
+	// }
+
+	// end := skip + size
+	// if end > len(x) {
+	// 	end = len(x)
+	// }
+
+	// var totalPages int = len(x) / size
+	// var paginatedRecord PaginateRecord
+	// paginatedRecord.Records = x[skip:end]
+	// paginatedRecord.Page = skip
+	// paginatedRecord.TotalPages = totalPages
+
+	// return paginatedRecord
 }
 
 type Record struct {
@@ -113,4 +166,10 @@ type Record struct {
 	Tags      []string `json:"tags"`
 	UpdatedAt int64    `json:"updated_at"`
 	ImageURLs []string `json:"image_urls"`
+}
+
+type PaginateRecord struct {
+	Records    []Record
+	Page       int
+	TotalPages int
 }
