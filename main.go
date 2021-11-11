@@ -56,10 +56,11 @@ func handleSearch(s *Searcher) http.HandlerFunc {
 			records, err := s.Search(q)
 
 			// page records
-			start, end := paginate(p, 20, len(records))
+			pageSize := 50
+			start, end := paginate(p, pageSize, len(records))
 			pagedSlice := records[start:end]
 
-			totalPages := float64(len(records)) / float64(20)
+			totalPages := float64(len(records)) / float64(pageSize)
 			var response PaginateRecord
 			response.Records = pagedSlice
 			response.Page = p
@@ -140,22 +141,6 @@ func paginate(pageNum int, pageSize int, sliceLength int) (int, int) {
 	}
 
 	return start, end
-	// if skip > len(x) {
-	// 	skip = len(x)
-	// }
-
-	// end := skip + size
-	// if end > len(x) {
-	// 	end = len(x)
-	// }
-
-	// var totalPages int = len(x) / size
-	// var paginatedRecord PaginateRecord
-	// paginatedRecord.Records = x[skip:end]
-	// paginatedRecord.Page = skip
-	// paginatedRecord.TotalPages = totalPages
-
-	// return paginatedRecord
 }
 
 type Record struct {

@@ -34,23 +34,19 @@
         <div class="row">
             <div class="col-sm-12">
                 <nav aria-label="Page navigation example">
-                    <ul id="pagination" class="pagination justify-content-center">
-                        <li class="page-item"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    </ul>
+                    <ul id="pagination" class="pagination justify-content-center"></ul>
                 </nav>
             </div>
         </div>
-        <div class="row" id="resultList"></div>
+        <div class="row" id="resultList">
+            <div class="spinner-border" role="status" style="margin: 0px auto;">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
         <div class="row">
             <div class="col-sm-12">
                 <nav aria-label="Page navigation example">
-                    <ul id="pagination" class="pagination justify-content-center">
-                        <li class="page-item"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    </ul>
+                    <ul id="pagination" class="pagination justify-content-center"></ul>
                 </nav>
             </div>
         </div>
@@ -64,12 +60,12 @@
         const Controller = {
             search: (ev) => {
                 ev ? ev.preventDefault() : '';
-                const data = Object.fromEntries(new FormData(form));
-                const page = ev ? 1 : data.page;
-                const response = fetch(`/search?q=${data.query}&p=${page}`).then((response) => {
+                const formData = Object.fromEntries(new FormData(form));
+                const page = ev ? 1 : formData.page;
+                const response = fetch(`/search?q=${formData.query}&p=${page}`).then((response) => {
                     response.json().then((result) => {
                         if (!result["Records"]) {
-                            alert(`No result for ${data.query}`);
+                            alert(`No result for ${formData.query}`);
                             return
                         }
                         Controller.updateList(result["Records"]);
@@ -162,10 +158,6 @@
 
         const form = document.getElementById("form");
         form.addEventListener("submit", Controller.search);
-
-        search = () => {
-            Controller.search();
-        }
 
         setQueryPage = (page) => {
             document.getElementById("page").value = page;
